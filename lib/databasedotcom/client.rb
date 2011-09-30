@@ -29,6 +29,8 @@ module Databasedotcom
     attr_accessor :username
     # The SalesForce password
     attr_accessor :password
+    # An override instance_url because Salesforce is broken
+    attr_accessor :override_instance_url
 
     # Returns a new client object. _options_ can be one of the following
     #
@@ -327,7 +329,7 @@ module Databasedotcom
 
     def ensure_expected_response(expected_result_class)
       response = yield
-      
+
       unless response.is_a?(expected_result_class || Net::HTTPSuccess)
         if response.is_a?(Net::HTTPUnauthorized)
           if self.refresh_token
@@ -349,13 +351,13 @@ module Databasedotcom
           end
 
           if response.is_a?(Net::HTTPSuccess)
-            response = yield 
+            response = yield
           end
         end
-        
-        raise SalesForceError.new(response) unless response.is_a?(expected_result_class ||  Net::HTTPSuccess) 
+
+        raise SalesForceError.new(response) unless response.is_a?(expected_result_class ||  Net::HTTPSuccess)
       end
-      
+
       response
     end
 
@@ -465,11 +467,11 @@ module Databasedotcom
     def user_and_pass?(options)
       (self.username && self.password) || (options && options[:username] && options[:password])
     end
-    
+
     def parse_auth_response(body)
       json = JSON.parse(body)
       @user_id = json["id"].match(/\/([^\/]+)$/)[1] rescue nil
-      self.instance_url = json["instance_url"]
+      self.instance_url = options[:override_instance_url] || json["instance_url"]
       self.oauth_token = json["access_token"]
     end
   end
