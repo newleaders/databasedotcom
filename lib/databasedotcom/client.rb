@@ -95,6 +95,7 @@ module Databasedotcom
         path = "/services/oauth2/token?grant_type=password&client_id=#{self.client_id}&client_secret=#{client_secret}&username=#{user}&password=#{pass}"
         log_request("https://#{self.host}/#{path}")
         result = req.post(path, "")
+        result = result.merge("instance_url" => options[:override_instance_url]) if options[:override_instance_url]
         log_response(result)
         raise SalesForceError.new(result) unless result.is_a?(Net::HTTPOK)
         self.username = user
@@ -471,7 +472,7 @@ module Databasedotcom
     def parse_auth_response(body)
       json = JSON.parse(body)
       @user_id = json["id"].match(/\/([^\/]+)$/)[1] rescue nil
-      self.instance_url = options[:override_instance_url] || json["instance_url"]
+      self.instance_url = json["instance_url"]
       self.oauth_token = json["access_token"]
     end
   end
